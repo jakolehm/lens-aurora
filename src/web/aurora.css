@@ -1,0 +1,465 @@
+.aurora-scene {
+  --bg: #211f1e;
+  --panel: color-mix(in srgb, var(--bg), white 4%);
+  --text: #f2efe9;
+  --muted: #9b948b;
+  --line: rgba(242, 239, 233, 0.14);
+  --red: #ff4b3a;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  --rail-w: 232px;
+
+  position: relative;
+  container: aurora / size;
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+.aurora-scene *,
+.aurora-scene *::before,
+.aurora-scene *::after {
+  box-sizing: border-box;
+}
+
+.aurora-scene__canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  outline: none;
+  /* the canvas owns every gesture: no scroll chaining, no double-tap zoom */
+  touch-action: none;
+}
+
+.aurora-scene__canvas:active {
+  cursor: grabbing;
+}
+
+.aurora-panel {
+  position: absolute;
+  z-index: 10;
+  min-width: 250px;
+  max-width: 320px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  backdrop-filter: blur(14px);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.aurora-panel[data-open='true'] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.aurora-panel__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: 16px/24px var(--sans);
+  cursor: pointer;
+}
+
+.aurora-panel__close:hover {
+  background: rgba(242, 239, 233, 0.08);
+  color: var(--text);
+}
+
+/* the panel lets clicks through to the scene; only its open close button takes them */
+.aurora-panel[data-open='true'] .aurora-panel__close {
+  pointer-events: auto;
+}
+
+.aurora-panel__name {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+  padding-right: 20px;
+  word-break: break-all;
+}
+
+.aurora-panel__kind {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.aurora-panel__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+}
+
+.aurora-panel__row span:last-child {
+  color: var(--text);
+  text-align: right;
+  word-break: break-all;
+}
+
+.aurora-panel__bar {
+  height: 2px;
+  margin: 5px 0 9px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.aurora-panel__bar i {
+  display: block;
+  height: 100%;
+  background: var(--text);
+  transition: width 0.5s ease;
+}
+
+.aurora-panel__bar--hot i {
+  background: var(--red);
+}
+
+.aurora-panel__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+.aurora-panel__leader {
+  position: absolute;
+  z-index: 9;
+  height: 1px;
+  background: var(--line);
+  transform-origin: 0 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.aurora-panel__leader[data-open='true'] {
+  opacity: 1;
+}
+
+/*
+ * On a phone there is no room beside the object, and a floating panel would
+ * cover the very thing it describes. It becomes a bottom sheet instead, and
+ * the leader line stops making sense so it goes away.
+ */
+@container aurora (max-width: 640px) or (max-height: 520px) {
+  .aurora-panel {
+    left: 12px !important;
+    right: 12px;
+    top: auto !important;
+    bottom: 12px;
+    min-width: 0;
+    max-width: none;
+    transform: translateY(12px);
+  }
+
+  .aurora-panel[data-open='true'] {
+    transform: translateY(0);
+  }
+
+  .aurora-panel__leader {
+    display: none;
+  }
+}
+
+.aurora-rail {
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  width: var(--rail-w);
+  padding: 16px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  /* floats over the scene: the cluster drifts behind it */
+  background: color-mix(in srgb, var(--bg) 42%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  user-select: none;
+  overflow: hidden;
+}
+
+.aurora-rail__title {
+  padding: 0 16px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.aurora-rail__totals {
+  padding: 2px 16px 0;
+  line-height: 1.75;
+}
+
+.aurora-rail__totals b {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.aurora-rail__heading {
+  display: flex;
+  justify-content: space-between;
+  margin: 15px 16px 6px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.aurora-rail__clear {
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  opacity: 0;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.aurora-rail__clear[data-shown='true'] {
+  opacity: 1;
+}
+
+.aurora-rail__clear:hover {
+  color: var(--text);
+}
+
+.aurora-rail__clusters {
+  /* the fleet's own list never collapses under the longer lists below it */
+  flex: 0 0 auto;
+  max-height: 30%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 239, 233, 0.16) transparent;
+}
+
+.aurora-rail__list {
+  flex: 1 1 auto;
+  /* three rows at least, then it scrolls */
+  min-height: 84px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 239, 233, 0.16) transparent;
+}
+
+.aurora-rail__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.aurora-rail__row:hover {
+  background: rgba(242, 239, 233, 0.05);
+  color: var(--text);
+}
+
+.aurora-rail__row[data-on='true'] {
+  background: rgba(242, 239, 233, 0.08);
+  color: var(--text);
+}
+
+.aurora-rail__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  transition: transform 0.15s ease;
+}
+
+.aurora-rail__row[data-on='true'] .aurora-rail__dot {
+  transform: scale(1.4);
+}
+
+.aurora-rail__name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aurora-rail__count {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.aurora-rail__ticker {
+  /* gives way first when the screen is short */
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 152px;
+  overflow: hidden;
+  padding: 0 16px;
+}
+
+.aurora-rail__quiet {
+  line-height: 1.85;
+  opacity: 0.5;
+}
+
+.aurora-rail__event {
+  display: flex;
+  gap: 8px;
+  line-height: 1.85;
+  white-space: nowrap;
+  animation: aurora-rail-in 0.35s ease both;
+}
+
+.aurora-rail__event i {
+  flex: 0 0 auto;
+  width: 52px;
+  font-style: normal;
+  color: var(--text);
+}
+
+.aurora-rail__event span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aurora-rail__event[data-bad='true'] i {
+  color: var(--red);
+}
+
+@keyframes aurora-rail-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+
+/* the rail would cover the very thing it describes on a phone */
+@container aurora (max-width: 640px) or (max-height: 520px) {
+  .aurora-rail {
+    display: none;
+  }
+}
+
+.aurora-label {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, 0);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.aurora-rail__lenses {
+  display: flex;
+  gap: 2px;
+  margin: 12px 16px 0;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.aurora-rail__lenses button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font: 10px/1.4 var(--mono);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.aurora-rail__lenses button:hover {
+  color: var(--text);
+}
+
+.aurora-rail__lenses button[data-on='true'] {
+  background: rgba(242, 239, 233, 0.1);
+  color: var(--text);
+}
+
+.aurora-rail__count[data-short='true'] {
+  color: #ffb020;
+}
+
+.aurora-panel__heading {
+  margin: 12px 0 2px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.aurora-panel__related {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.aurora-panel__related > span:nth-child(2) {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aurora-panel__related > span:last-child {
+  flex: 0 1 auto;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* a name in the scene: beside a small thing, or centred below an area */
+.aurora-tag {
+  position: absolute;
+  z-index: 5;
+  transform: translate(10px, -50%);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 0 4px var(--bg);
+}
+
+.aurora-tag[data-place='below'] {
+  transform: translate(-50%, 0);
+}

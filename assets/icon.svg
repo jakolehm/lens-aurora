@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14202a"/>
+      <stop offset="1" stop-color="#17161d"/>
+    </linearGradient>
+    <linearGradient id="aurora" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#4ecb71"/>
+      <stop offset="0.5" stop-color="#2fbf9a"/>
+      <stop offset="1" stop-color="#5b83ff"/>
+    </linearGradient>
+    <filter id="wide" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="core" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.2"/>
+    </filter>
+    <clipPath id="tile"><rect width="64" height="64" rx="14"/></clipPath>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#sky)"/>
+  <g clip-path="url(#tile)" fill="none" stroke="url(#aurora)" stroke-linecap="round">
+    <path d="M-4 50 C14 52 18 30 32 30 S50 10 68 12" stroke-width="18" opacity="0.55" filter="url(#wide)"/>
+    <path d="M-4 50 C14 52 18 30 32 30 S50 10 68 12" stroke-width="5" filter="url(#core)"/>
+  </g>
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="#f2efe9" stroke-opacity="0.16" stroke-width="1.5"/>
+</svg>
