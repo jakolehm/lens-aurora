@@ -1,5 +1,5 @@
 {
-  "name": "lens-aurora",
+  "name": "@jakolehm/lens-aurora",
   "version": "0.1.0",
   "description": "A live 3D view of every Kubernetes cluster Lens is connected to.",
   "keywords": [
@@ -60,5 +60,8 @@
     "@types/react": "^19.2.0",
     "@types/three": "^0.185.4",
     "rimraf": "^4.4.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
