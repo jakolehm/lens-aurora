@@ -1,7 +1,7 @@
 import { getInjectable2 } from "@k8slens/injectable";
 import { applicationWindowOnly } from "@k8slens/sub-window-contracts";
 import type { ResourceRef } from "../../shared/resource";
-import { openAuroraWindowInjectable } from "../open-aurora-window.injectable";
+import { openAuroraInjectable } from "../open-aurora.injectable";
 import { revealRequestInjectable } from "./reveal-request.injectable";
 
 export const showInAuroraInjectable = getInjectable2({
@@ -10,11 +10,11 @@ export const showInAuroraInjectable = getInjectable2({
 
   instantiate: (di) => {
     const revealRequest = di.inject(revealRequestInjectable)();
-    const openAuroraWindow = di.inject(openAuroraWindowInjectable)();
+    const openAurora = di.inject(openAuroraInjectable)();
 
     return () => (ref: ResourceRef) => {
       revealRequest.request(ref);
-      void openAuroraWindow();
+      void openAurora();
     };
   },
 });
