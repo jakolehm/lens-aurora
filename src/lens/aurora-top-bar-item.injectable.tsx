@@ -5,7 +5,7 @@ import { AuroraIcon } from "./aurora-icon";
 import { openAuroraWindowInjectable } from "./open-aurora-window.injectable";
 
 const OpenAuroraButton = () => {
-  const openAuroraWindow = useInject(openAuroraWindowInjectable);
+  const openAuroraWindow = useInject(openAuroraWindowInjectable)();
 
   return (
     <Button $onClick={() => void openAuroraWindow()} $tooltip="Aurora: open your connected clusters in 3D, in a new window" $interactive>

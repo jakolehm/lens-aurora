@@ -13,7 +13,7 @@ export const openAuroraCommandBunch = getCommandInjectableBunch({
   },
   action: {
     instantiate: (di) => {
-      const openAuroraTab = di.inject(openAuroraTabInjectable);
+      const openAuroraTab = di.inject(openAuroraTabInjectable)();
 
       return () => () => openAuroraTab();
     },
@@ -25,7 +25,7 @@ export const openAuroraWindowCommandBunch = getCommandInjectableBunch({
   title: "Aurora: Open in new window",
   action: {
     instantiate: (di) => {
-      const openAuroraWindow = di.inject(openAuroraWindowInjectable);
+      const openAuroraWindow = di.inject(openAuroraWindowInjectable)();
 
       return () => () => openAuroraWindow();
     },

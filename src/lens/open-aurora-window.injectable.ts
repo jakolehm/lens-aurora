@@ -10,6 +10,6 @@ export const openAuroraWindowInjectable = getInjectable2({
     const openWindow = di.inject(openSubWindowInjectionToken.for(auroraWindowKind).for(di.scopeIds))();
 
     // opening the one window again brings it forward
-    return () => openWindow({ id: "aurora", params: undefined });
+    return () => () => openWindow({ id: "aurora", params: undefined });
   },
 });

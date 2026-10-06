@@ -14,7 +14,7 @@ export const openAuroraTabInjectable = getInjectable2({
     const focusTab = di.inject(focusTabInjectionToken.for(mainViewTabHostKind).for(auroraTabKind).for(di.scopeIds))();
     const isOpen = di.inject(tabIsOpenInjectionToken.for(mainViewTabHostKind).for(auroraTabKind).for(di.scopeIds))();
 
-    return async () => {
+    return () => async () => {
       if (await isOpen({ tabId })) {
         await focusTab({ tabId });
       } else {
