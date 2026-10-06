@@ -9,11 +9,17 @@ import {
 import { showInfoNotificationInjectionToken } from "@k8slens/notifications-contracts";
 import { reaction } from "mobx";
 import { lensOf, type Aurora } from "../../web/aurora";
-import { revealHandledChannel, revealRequestChannel } from "./channels";
+import { revealHandledChannel, revealRequestChannel, type RevealRequest } from "./channels";
+import { revealRequestInjectable } from "./reveal-request.injectable";
 
 const RETRY_MS = 200;
 // a lens turned to loads what it shows first, so give it time
 const GIVE_UP_MS = 15_000;
+
+interface RevealRequests {
+  readonly get: () => RevealRequest | undefined;
+  readonly handled: (id: number) => void;
+}
 
 export const followRevealRequestsInjectable = getInjectable2({
   id: "aurora-follow-reveal-requests",
@@ -30,26 +36,33 @@ export const followRevealRequestsInjectable = getInjectable2({
     const sendMessageToWindow = di.inject(sendMessageToWindowInjectionToken)();
     const showInfoNotification = di.inject(showInfoNotificationInjectionToken)();
 
-    return () => (aurora: Aurora): (() => void) => {
-      // "Show in Aurora" opens the Aurora window, so the tab in the application window leaves requests alone
-      if (isApplicationWindow(getThisWindowId())) return () => {};
-
+    // the application window holds the requests, and Aurora's own window follows them from there
+    const revealRequests = (): RevealRequests => {
+      if (isApplicationWindow(getThisWindowId())) return di.inject(revealRequestInjectable)();
       const request = computedChannelOfWindow({
         of: applicationWindowId,
         channel: revealRequestChannel,
         pendingValue: undefined,
       })();
+      return {
+        get: () => request.get(),
+        handled: (id) => void sendMessageToWindow(applicationWindowId, revealHandledChannel, id),
+      };
+    };
+
+    return () => (aurora: Aurora): (() => void) => {
+      const requests = revealRequests();
       let retry: ReturnType<typeof setInterval> | undefined;
       let handling: number | undefined;
       const stopRetrying = () => clearInterval(retry);
       const handled = (id: number) => {
         stopRetrying();
         handling = undefined;
-        void sendMessageToWindow(applicationWindowId, revealHandledChannel, id);
+        requests.handled(id);
       };
 
       const stopFollowing = reaction(
-        () => request.get(),
+        () => requests.get(),
         (pending) => {
           stopRetrying();
           const lens = pending && lensOf(pending.ref.kind);

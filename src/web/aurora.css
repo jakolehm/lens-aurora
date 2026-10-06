@@ -85,8 +85,9 @@
   color: var(--text);
 }
 
-/* the panel lets clicks through to the scene; only its open close button takes them */
-.aurora-panel[data-open='true'] .aurora-panel__close {
+/* the panel lets clicks through to the scene; only its open close button and links take them */
+.aurora-panel[data-open='true'] .aurora-panel__close,
+.aurora-panel[data-open='true'] .aurora-panel__link {
   pointer-events: auto;
 }
 
@@ -452,8 +453,14 @@
   all: unset;
   cursor: pointer;
   text-align: left;
-  text-decoration: underline dotted var(--line);
+  text-decoration: underline dotted var(--muted);
   text-underline-offset: 3px;
+}
+
+.aurora-panel__link::after {
+  content: ' ↗';
+  color: var(--muted);
+  font-size: 0.85em;
 }
 
 .aurora-panel__link:hover,
