@@ -2,13 +2,13 @@ import { Button } from "@k8slens/element-components";
 import { getTopBarItemInjectableBunch } from "@k8slens/top-bar-contracts";
 import { useInject } from "@k8slens/use-inject";
 import { AuroraIcon } from "./aurora-icon";
-import { openAuroraWindowInjectable } from "./open-aurora-window.injectable";
+import { openAuroraInjectable } from "./open-aurora.injectable";
 
 const OpenAuroraButton = () => {
-  const openAuroraWindow = useInject(openAuroraWindowInjectable)();
+  const openAurora = useInject(openAuroraInjectable)();
 
   return (
-    <Button $onClick={() => void openAuroraWindow()} $tooltip="Aurora: open your connected clusters in 3D, in a new window" $interactive>
+    <Button $onClick={() => void openAurora()} $tooltip="Aurora: open your connected clusters in 3D" $interactive>
       <AuroraIcon $size="m" />
     </Button>
   );

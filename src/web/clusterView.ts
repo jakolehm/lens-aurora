@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { SemanticEvent, ServerMessage } from '../shared/protocol.js'
+import type { ResourceRef } from '../shared/resource.js'
 import { Effects } from './scene/anim/effects.js'
 import { Ambient, type MotionGate } from './scene/ambient.js'
 import { dispatchNodeEvent } from './scene/anim/node/index.js'
@@ -24,6 +25,10 @@ import type { WorkloadIndex } from './state/workloads.js'
 import { REDUCED_MOTION, RIG_SPIN_RATE, clamp01, smooth } from './theme.js'
 
 const ENTRY_FOCUS_REACH = 1.5
+
+const found = new THREE.Vector3()
+
+const groupOf = (apiVersion: string): string => apiVersion.split('/')[0] ?? ''
 
 export interface ClusterViewDeps {
   workloads: WorkloadIndex
@@ -170,6 +175,36 @@ export class ClusterView {
     if (field === null || !field.rigPositionOf(picked.uid, out)) return false
     this.#rig.localToWorld(out)
     return true
+  }
+
+  /** What stands for a resource in this cluster, once it is there to be shown. */
+  find(ref: ResourceRef): Picked | null {
+    const target = this.#targetOf(ref)
+    return target !== null && this.positionOf(target, found) ? target : null
+  }
+
+  #targetOf({ kind, apiVersion, namespace = '', name }: ResourceRef): Picked | null {
+    switch (kind) {
+      case 'Pod': {
+        const pod = [...this.state.pods.values()].find((p) => p.namespace === namespace && p.name === name)
+        return pod === undefined ? null : { kind: 'pod', uid: pod.uid }
+      }
+      case 'Node':
+        return { kind: this.#cores.cores.has(name) ? 'core' : 'node', name }
+      case 'Namespace':
+        return { kind: 'namespace', name }
+      case 'Service':
+      case 'Ingress':
+      case 'Gateway': {
+        const entry = [...this.network.entries].find(
+          (e) => e.resource.kind === kind && groupOf(e.resource.apiVersion) === groupOf(apiVersion) && e.namespace === namespace && e.name === name,
+        )
+        if (entry !== undefined) return { kind: 'entry', key: entry.key }
+        return kind === 'Service' ? { kind: 'service', key: `${namespace}/${name}` } : null
+      }
+      default:
+        return { kind: 'workload', key: `${namespace}/${kind}/${name}` }
+    }
   }
 
   setHovered(hovered: boolean): void {

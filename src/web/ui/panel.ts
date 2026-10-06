@@ -1,3 +1,5 @@
+import type { EntryView } from '../../shared/network.js'
+import { builtInRef, type ResourceRef } from '../../shared/resource.js'
 import { RELATED_KINDS, type RelatedKind, type RelatedView } from '../../shared/workloads.js'
 import { MANAGED_CORE } from '../scene/corePlane.js'
 import type { Picked } from '../scene/picking.js'
@@ -33,12 +35,30 @@ const RELATED_HEADINGS: Record<RelatedKind, string> = {
   ServiceAccount: 'service account',
 }
 
-const relatedRow = (r: RelatedView): string =>
-  `<div class="aurora-panel__related">${dot(hex(RELATED_HUES[r.kind]))}<span>${escape(r.name)}</span>` +
-  `<span>${escape(r.via === null ? r.detail : `${r.detail} → ${r.via}`.trim())}</span></div>`
+/** A name that takes the user to the resource in Lens, or plain text when Lens cannot be pointed at it. */
+const link = (ref: ResourceRef | null, text: string): string =>
+  ref === null
+    ? `<span>${escape(text)}</span>`
+    : `<button type="button" class="aurora-panel__link" title="Show in Lens" data-ref="${escape(JSON.stringify(ref))}">${escape(text)}</button>`
+
+const heading = (ref: ResourceRef | null, text: string): string => `<div class="aurora-panel__name">${link(ref, text)}</div>`
+
+const related = (color: string, ref: ResourceRef | null, text: string, detail: string): string =>
+  `<div class="aurora-panel__related">${dot(color)}${link(ref, text)}<span>${escape(detail)}</span></div>`
+
+const relatedRow = (cluster: string, namespace: string, r: RelatedView): string =>
+  related(
+    hex(RELATED_HUES[r.kind]),
+    builtInRef(cluster, r.kind, r.name, namespace),
+    r.name,
+    r.via === null ? r.detail : `${r.detail} → ${r.via}`.trim(),
+  )
+
+const entryRef = (cluster: string, entry: EntryView): ResourceRef => ({ cluster, ...entry.resource, name: entry.name, namespace: entry.namespace })
 
 /** What the panel reads a cluster's details from. */
 export interface PanelSource {
+  readonly id: string
   readonly state: ClusterState
   readonly workloads: WorkloadIndex
   readonly network: NetworkIndex
@@ -52,10 +72,11 @@ export class InfoPanel {
   readonly #content: HTMLDivElement
   readonly #leader: HTMLDivElement
   #target: Picked | null = null
+  #html = ''
   #anchorX = 0
   #anchorY = 0
 
-  constructor(host: HTMLElement, onClose: () => void) {
+  constructor(host: HTMLElement, { onClose, onShowInLens }: { onClose: () => void; onShowInLens: (ref: ResourceRef) => void }) {
     this.#host = host
 
     this.#el = document.createElement('div')
@@ -71,6 +92,10 @@ export class InfoPanel {
     close.addEventListener('click', onClose)
 
     this.#content = document.createElement('div')
+    this.#content.addEventListener('click', (e) => {
+      const ref = (e.target as Element).closest<HTMLElement>('[data-ref]')?.dataset['ref']
+      if (ref !== undefined) onShowInLens(JSON.parse(ref) as ResourceRef)
+    })
     this.#el.append(close, this.#content)
 
     this.#leader = document.createElement('div')
@@ -139,7 +164,11 @@ export class InfoPanel {
       this.hide()
       return
     }
-    this.#content.innerHTML = html
+    // the same markup is left alone, so a click that spans a refresh still lands on its link
+    if (html !== this.#html) {
+      this.#html = html
+      this.#content.innerHTML = html
+    }
     this.track(this.#anchorX, this.#anchorY)
   }
 
@@ -154,50 +183,44 @@ export class InfoPanel {
       case 'service':
         return this.#service(source, target.key)
       case 'pod':
-        return this.#pod(source.state, target.uid)
+        return this.#pod(source, target.uid)
       default:
-        return this.#node(source.state, target)
+        return this.#node(source, target)
     }
   }
 
-  #entry({ network }: PanelSource, key: string): string {
+  #entry({ id, network }: PanelSource, key: string): string {
     const entry = network.entry(key)
     if (entry === undefined) return ''
     const services = entry.services.flatMap((s) => network.service(s) ?? [])
     return [
-      `<div class="aurora-panel__name">${escape(entry.name)}</div>`,
+      heading(entryRef(id, entry), entry.name),
       `<div class="aurora-panel__kind">${dot(hex(ENTRY_HUES[entry.kind]))}${escape(entry.kind)} · ${escape(entry.namespace)}</div>`,
       entry.detail === '' ? '' : row('from', escape(entry.detail)),
       `<div class="aurora-panel__heading">sends to</div>`,
       ...(services.length === 0
         ? [row('services', 'none that exist')]
-        : services.map(
-            (s) =>
-              `<div class="aurora-panel__related">${dot(hex(RELATED_HUES.Service))}<span>${escape(s.name)}</span><span>${escape(s.detail)}</span></div>`,
-          )),
+        : services.map((s) => related(hex(RELATED_HUES.Service), builtInRef(id, 'Service', s.name, s.namespace), s.name, s.detail))),
     ].join('')
   }
 
-  #service({ state, network }: PanelSource, key: string): string {
+  #service({ id, state, network }: PanelSource, key: string): string {
     const service = network.service(key)
     if (service === undefined) return ''
     const pods = service.pods.flatMap((uid) => state.pods.get(uid) ?? [])
     const ready = pods.filter((p) => p.ready).length
     const entries = network.entriesOf(key)
     return [
-      `<div class="aurora-panel__name">${escape(service.name)}</div>`,
+      heading(builtInRef(id, 'Service', service.name, service.namespace), service.name),
       `<div class="aurora-panel__kind">${dot(hex(RELATED_HUES.Service))}service · ${escape(service.namespace)}</div>`,
       row('ports', escape(service.detail)),
       row('pods', `${dot(pods.length > 0 && ready === pods.length ? GREEN : pods.length === 0 ? RED : AMBER)}${ready}/${pods.length} ready`),
       `<div class="aurora-panel__heading">reached through</div>`,
-      ...entries.map(
-        (e) =>
-          `<div class="aurora-panel__related">${dot(hex(ENTRY_HUES[e.kind]))}<span>${escape(e.name)}</span><span>${escape(e.kind)}</span></div>`,
-      ),
+      ...entries.map((e) => related(hex(ENTRY_HUES[e.kind]), entryRef(id, e), e.name, e.kind)),
     ].join('')
   }
 
-  #node(state: ClusterState, picked: Extract<Picked, { kind: 'core' | 'node' }>): string {
+  #node({ id, state }: PanelSource, picked: Extract<Picked, { kind: 'core' | 'node' }>): string {
     if (picked.kind === 'core' && picked.name === MANAGED_CORE) {
       return [
         `<div class="aurora-panel__name">control plane</div>`,
@@ -218,7 +241,7 @@ export class InfoPanel {
 
     if (view.inferred) {
       return [
-        `<div class="aurora-panel__name">${escape(view.name)}</div>`,
+        heading(null, view.name),
         `<div class="aurora-panel__kind">node, known from its pods</div>`,
         row('status', 'unknown: no access to nodes'),
         row('pods', String(pods)),
@@ -226,7 +249,7 @@ export class InfoPanel {
     }
 
     return [
-      `<div class="aurora-panel__name">${escape(view.name)}</div>`,
+      heading(builtInRef(id, 'Node', view.name), view.name),
       `<div class="aurora-panel__kind">${view.role === 'control-plane' ? 'control plane' : 'worker node'}</div>`,
       row('status', `${dot(color)}${status}`),
       row('version', escape(view.version)),
@@ -242,8 +265,8 @@ export class InfoPanel {
     ].join('')
   }
 
-  #namespace({ state, workloads }: PanelSource, name: string): string {
-    const owned = [...workloads.all].filter((w) => w.namespace === name)
+  #namespace({ id, state, workloads }: PanelSource, namespace: string): string {
+    const owned = [...workloads.all].filter((w) => w.namespace === namespace)
     if (owned.length === 0) return ''
 
     const pods = owned.flatMap((w) => w.pods.flatMap((uid) => state.pods.get(uid) ?? []))
@@ -253,7 +276,7 @@ export class InfoPanel {
     const short = owned.filter((w) => w.pods.some((uid) => state.pods.get(uid)?.ready !== true))
 
     return [
-      `<div class="aurora-panel__name">${escape(name)}</div>`,
+      heading(builtInRef(id, 'Namespace', namespace), namespace),
       `<div class="aurora-panel__kind">namespace</div>`,
       row('pods', `${dot(ready === pods.length ? GREEN : AMBER)}${ready}/${pods.length} ready`),
       row('restarts', String(pods.reduce((sum, p) => sum + p.restarts, 0))),
@@ -263,12 +286,12 @@ export class InfoPanel {
         ? []
         : [
             `<div class="aurora-panel__heading">not ready</div>`,
-            ...short.map((w) => `<div class="aurora-panel__related">${dot(AMBER)}<span>${escape(w.name)}</span></div>`),
+            ...short.map((w) => related(AMBER, builtInRef(id, w.kind, w.name, w.namespace), w.name, w.kind)),
           ]),
     ].join('')
   }
 
-  #workload({ state, workloads }: PanelSource, key: string): string {
+  #workload({ id, state, workloads }: PanelSource, key: string): string {
     const workload = workloads.get(key)
     if (workload === undefined) return ''
 
@@ -280,13 +303,13 @@ export class InfoPanel {
     const restarts = pods.reduce((sum, p) => sum + p.restarts, 0)
 
     const sections = RELATED_KINDS.flatMap((kind) => {
-      const related = workload.related.filter((r) => r.kind === kind)
-      if (related.length === 0) return []
-      return [`<div class="aurora-panel__heading">${RELATED_HEADINGS[kind]}</div>`, ...related.map(relatedRow)]
+      const ofKind = workload.related.filter((r) => r.kind === kind)
+      if (ofKind.length === 0) return []
+      return [`<div class="aurora-panel__heading">${RELATED_HEADINGS[kind]}</div>`, ...ofKind.map((r) => relatedRow(id, workload.namespace, r))]
     })
 
     return [
-      `<div class="aurora-panel__name">${escape(workload.name)}</div>`,
+      heading(builtInRef(id, workload.kind, workload.name, workload.namespace), workload.name),
       `<div class="aurora-panel__kind">${dot(hex(workloadHue(workload.kind)))}${escape(workload.kind)} · ${escape(workload.namespace)}</div>`,
       row('pods', `${dot(ready === pods.length ? GREEN : AMBER)}${ready}/${pods.length} ready`),
       row('restarts', String(restarts)),
@@ -294,7 +317,7 @@ export class InfoPanel {
     ].join('')
   }
 
-  #pod(state: ClusterState, uid: string): string {
+  #pod({ id, state }: PanelSource, uid: string): string {
     const view = state.pods.get(uid)
     if (view === undefined) return ''
 
@@ -303,10 +326,10 @@ export class InfoPanel {
     const healthy = view.ready && view.phase === 'Running'
 
     return [
-      `<div class="aurora-panel__name">${escape(view.name)}</div>`,
+      heading(builtInRef(id, 'Pod', view.name, view.namespace), view.name),
       `<div class="aurora-panel__kind">${dot(hue)}${escape(view.namespace)}</div>`,
       row('phase', `${dot(healthy ? GREEN : RED)}${view.phase}`),
-      row('node', escape(view.node ?? 'unscheduled')),
+      row('node', view.node === null ? 'unscheduled' : link(builtInRef(id, 'Node', view.node), view.node)),
       row('containers', `${view.containersReady[0]}/${view.containersReady[1]}`),
       row('restarts', String(view.restarts)),
       row('age', formatAge(view.createdAt)),

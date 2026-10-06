@@ -4,6 +4,8 @@ import { reaction } from "mobx";
 import { Aurora } from "../web/aurora";
 import { ClusterFeed } from "./cluster-feed";
 import { connectedClustersInjectable } from "./connected-clusters.injectable";
+import { followRevealRequestsInjectable } from "./navigation/follow-reveal-requests.injectable";
+import { showInLensInjectable } from "./navigation/show-in-lens.injectable";
 import { themeBackground } from "./theme-background";
 
 const FLUSH_MS = 120;
@@ -15,9 +17,11 @@ export const mountAuroraInjectable = getInjectable2({
   instantiate: (di) => {
     const kubeResources = di.inject(kubeResourcesInjectionToken)();
     const connectedClusters = di.inject(connectedClustersInjectable)();
+    const showInLens = di.inject(showInLensInjectable)();
+    const followRevealRequests = di.inject(followRevealRequestsInjectable)();
 
     return () => (host: HTMLElement) => {
-      const aurora = new Aurora(host, { background: themeBackground(host) });
+      const aurora = new Aurora(host, { background: themeBackground(host), showInLens });
       const feeds = new Map<string, ClusterFeed>();
 
       const connect = (id: string, name: string) => {
@@ -46,12 +50,15 @@ export const mountAuroraInjectable = getInjectable2({
         { fireImmediately: true },
       );
 
+      const stopRevealing = followRevealRequests(aurora);
+
       const flush = setInterval(() => {
         for (const { store } of feeds.values()) store.flush(Date.now());
       }, FLUSH_MS);
 
       return () => {
         stopFollowing();
+        stopRevealing();
         clearInterval(flush);
         for (const id of [...feeds.keys()]) disconnect(id);
         aurora.dispose();
