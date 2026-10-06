@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import type { NetworkView } from '../shared/network.js'
 import type { ServerMessage } from '../shared/protocol.js'
+import type { ResourceRef } from '../shared/resource.js'
 import type { WorkloadView } from '../shared/workloads.js'
 import { ClusterView } from './clusterView.js'
 import { CameraRig, fitDistance } from './scene/camera.js'
@@ -11,7 +12,7 @@ import { Picker, type Pick, type Picked } from './scene/picking.js'
 import { LensLook, NamespaceLook, WorkloadLook } from './scene/podLook.js'
 import { World, type FrameContext } from './scene/world.js'
 import { NamespaceFocus } from './state/focus.js'
-import { ActiveLens } from './state/lens.js'
+import { ActiveLens, type LensName } from './state/lens.js'
 import { NamespacePalette } from './state/namespacePalette.js'
 import { NetworkIndex } from './state/network.js'
 import { BG } from './theme.js'
@@ -58,6 +59,27 @@ interface Selection {
   target: Picked | null
 }
 
+interface AuroraOptions {
+  background?: number
+  showInLens: (ref: ResourceRef) => void
+}
+
+/** The kinds Aurora can show, each in the lens it is seen in. */
+const LENS_OF_KIND: Readonly<Record<string, LensName>> = {
+  Pod: 'nodes',
+  Node: 'nodes',
+  Namespace: 'workloads',
+  Deployment: 'workloads',
+  StatefulSet: 'workloads',
+  DaemonSet: 'workloads',
+  CronJob: 'workloads',
+  Service: 'network',
+  Ingress: 'network',
+  Gateway: 'network',
+}
+
+export const lensOf = (kind: string): LensName | undefined => LENS_OF_KIND[kind]
+
 /** Every connected cluster in one space, under one camera and one rail. */
 export class Aurora {
   readonly lens = new ActiveLens()
@@ -82,7 +104,7 @@ export class Aurora {
   #lastRailRefresh = 0
   #framedRadius = 3
 
-  constructor(host: HTMLElement, { background = BG }: { background?: number } = {}) {
+  constructor(host: HTMLElement, { background = BG, showInLens }: AuroraOptions) {
     this.#host = host
     host.style.setProperty('--bg', `#${background.toString(16).padStart(6, '0')}`)
     host.classList.add('aurora-scene')
@@ -96,7 +118,7 @@ export class Aurora {
     this.#world = new World(this.#canvas, { leftInset: railInset, background })
     this.#cameraRig = new CameraRig(this.#world.camera, this.#canvas, this.#world.ambient)
     new HoverTracker(this.#world, () => this.#clusters.values()).attach(this.#canvas)
-    this.#panel = new InfoPanel(host, () => this.#closePanel())
+    this.#panel = new InfoPanel(host, { onClose: () => this.#closePanel(), onShowInLens: showInLens })
     this.#rail = new Rail(host, {
       clusters: () => [...this.#clusters.values()],
       palette: this.#palette,
@@ -182,6 +204,14 @@ export class Aurora {
   /** Empty while the network lens is off: nothing is watched for it then. */
   setNetwork(id: string, network: NetworkView): void {
     this.#clusters.get(id)?.network.set(network)
+  }
+
+  /** Selects the resource; false until the lens that shows it has loaded it. */
+  reveal(ref: ResourceRef): boolean {
+    const target = this.#clusters.get(ref.cluster)?.find(ref) ?? null
+    if (target === null) return false
+    this.#select({ cluster: ref.cluster, target })
+    return true
   }
 
   removeCluster(id: string): void {
