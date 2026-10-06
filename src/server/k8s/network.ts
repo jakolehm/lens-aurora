@@ -1,12 +1,15 @@
 import type { EntryView, NetworkView, ServiceHop } from '../../shared/network.js'
-import type {
-  GatewayResource,
-  HttpRouteResource,
-  IngressResource,
-  IstioGatewayResource,
-  PodResource,
-  ServiceResource,
-  VirtualServiceResource,
+import type { ResourceKind } from '../../shared/resource.js'
+import {
+  gatewayV1,
+  istioV1,
+  type GatewayResource,
+  type HttpRouteResource,
+  type IngressResource,
+  type IstioGatewayResource,
+  type PodResource,
+  type ServiceResource,
+  type VirtualServiceResource,
 } from './kinds.js'
 import { backendsOf, selects, serviceDetail } from './workloads.js'
 
@@ -34,6 +37,11 @@ interface Router {
 const GATEWAY_NAME_LABEL = 'gateway.networking.k8s.io/gateway-name'
 /** A virtual service with no gateways named routes only inside the mesh. */
 const MESH = 'mesh'
+
+const SERVICE: ResourceKind = { kind: 'Service', apiVersion: 'v1' }
+const INGRESS: ResourceKind = { kind: 'Ingress', apiVersion: 'networking.k8s.io/v1' }
+const GATEWAY: ResourceKind = { kind: 'Gateway', apiVersion: gatewayV1 }
+const ISTIO_GATEWAY: ResourceKind = { kind: 'Gateway', apiVersion: istioV1 }
 
 const serviceKey = (namespace: string, name: string): string => `${namespace}/${name}`
 
@@ -69,6 +77,7 @@ function exposedEntry(service: ServiceResource): EntryView {
   return {
     key: `${type}/${namespace}/${name}`,
     kind: type,
+    resource: SERVICE,
     name,
     namespace,
     detail: detailOf([...addressesOf(service.status?.loadBalancer), ...portsOf(service)]),
@@ -85,6 +94,7 @@ function ingressRouters(ingresses: readonly IngressResource[]): Router[] {
       entry: {
         key: `Ingress/${namespace}/${name}`,
         kind: 'Ingress',
+        resource: INGRESS,
         name,
         namespace,
         detail: detailOf([...rules.map((rule) => rule.host ?? ''), ...addresses]),
@@ -120,6 +130,7 @@ function gatewayRouters(gateways: readonly GatewayResource[], routes: readonly H
       entry: {
         key: `Gateway/${namespace}/${name}`,
         kind: 'Gateway',
+        resource: GATEWAY,
         name,
         namespace,
         detail: detailOf([
@@ -159,6 +170,7 @@ function istioRouters(
       entry: {
         key: `IstioGateway/${namespace}/${name}`,
         kind: 'Gateway',
+        resource: ISTIO_GATEWAY,
         name,
         namespace,
         detail: detailOf([

@@ -1,12 +1,16 @@
 // What the network lens shows: where traffic enters a cluster from outside,
 // and the services it is sent on to.
 
+import type { ResourceKind } from './resource.js'
+
 export type EntryKind = 'Gateway' | 'Ingress' | 'LoadBalancer' | 'NodePort'
 
 export interface EntryView {
   /** `kind/namespace/name`, unique within one cluster */
   key: string
   kind: EntryKind
+  /** the resource the entry is, which for a LoadBalancer or NodePort entry is a service */
+  resource: ResourceKind
   name: string
   namespace: string
   /** hosts, addresses and ports, as far as the cluster knows them */

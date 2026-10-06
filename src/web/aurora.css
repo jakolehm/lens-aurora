@@ -431,7 +431,7 @@
   gap: 8px;
 }
 
-.aurora-panel__related > span:nth-child(2) {
+.aurora-panel__related > :nth-child(2) {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -445,6 +445,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* a name that opens the resource in Lens */
+.aurora-panel__link {
+  all: unset;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline dotted var(--line);
+  text-underline-offset: 3px;
+}
+
+.aurora-panel__link:hover,
+.aurora-panel__link:focus-visible {
+  text-decoration: underline solid var(--muted);
 }
 
 /* a name in the scene: beside a small thing, or centred below an area */
