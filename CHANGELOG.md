@@ -2,6 +2,10 @@
 
 What changed in each version of this extension, newest first.
 
+## 0.1.1
+
+- Fix the Aurora window and tab so that they open again after you close them. In 0.1.0, they opened only one time until you reloaded Lens.
+
 ## 0.1.0
 
 - Show all connected clusters live in one 3D space in an Aurora tab, with one rail for the whole fleet.
