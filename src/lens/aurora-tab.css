@@ -1,3 +1,10 @@
 .aurora-view {
   height: 100%;
 }
+
+.aurora-tab-title {
+  max-width: 220px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

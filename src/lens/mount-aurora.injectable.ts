@@ -20,7 +20,7 @@ export const mountAuroraInjectable = getInjectable2({
     const showInLens = di.inject(showInLensInjectable)();
     const followRevealRequests = di.inject(followRevealRequestsInjectable)();
 
-    return () => (host: HTMLElement) => {
+    return () => (host: HTMLElement, onlyClusterId?: string) => {
       const aurora = new Aurora(host, { background: themeBackground(host), showInLens });
       const feeds = new Map<string, ClusterFeed>();
 
@@ -41,7 +41,10 @@ export const mountAuroraInjectable = getInjectable2({
       });
 
       const stopFollowing = reaction(
-        () => connectedClusters.get()?.map((cluster) => ({ id: cluster.id, name: cluster.name.get() })) ?? [],
+        () =>
+          (connectedClusters.get() ?? [])
+            .filter((cluster) => onlyClusterId === undefined || cluster.id === onlyClusterId)
+            .map((cluster) => ({ id: cluster.id, name: cluster.name.get() })),
         (clusters) => {
           const wanted = new Set(clusters.map((cluster) => cluster.id));
           for (const id of feeds.keys()) if (!wanted.has(id)) disconnect(id);
@@ -50,7 +53,8 @@ export const mountAuroraInjectable = getInjectable2({
         { fireImmediately: true },
       );
 
-      const stopRevealing = followRevealRequests(aurora);
+      // "Show in Aurora" goes to the fleet, so a cluster's own tab does not compete for it
+      const stopRevealing = onlyClusterId === undefined ? followRevealRequests(aurora) : () => {};
 
       const flush = setInterval(() => {
         for (const { store } of feeds.values()) store.flush(Date.now());

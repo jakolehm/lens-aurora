@@ -47,6 +47,7 @@ CPU and memory need metrics-server in the cluster. Heartbeats need read access t
 
 1. Connect one or more clusters in the Lens navigator.
 2. Open Aurora: click the Aurora button in the top bar, or run **Aurora: Open** from the command palette. Aurora opens in a tab. To see it in a window of its own, move the tab to a new window in Lens.
+   To see only one cluster, click **Aurora** under the cluster in the navigator.
 3. In a scene:
    - Drag to orbit. Shift-drag or right-drag to pan. Scroll to zoom.
    - Click a node or a pod to focus it and see its details.

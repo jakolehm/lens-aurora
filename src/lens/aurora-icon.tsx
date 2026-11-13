@@ -21,3 +21,10 @@ export const AuroraIcon = (props: SvgProps) => {
     </Svg>
   );
 };
+
+export const AuroraMonoIcon = (props: SvgProps) => (
+  <Svg viewBox="0 0 64 64" fill="none" {...props}>
+    <path d={CURVE} stroke="currentColor" strokeWidth="18" strokeLinecap="round" opacity="0.3" />
+    <path d={CURVE} stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+  </Svg>
+);

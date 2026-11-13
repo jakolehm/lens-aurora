@@ -48,6 +48,8 @@
     "@k8slens/main-view-contracts": "^1.7.1",
     "@k8slens/messaging-contracts": "^1.0.3",
     "@k8slens/navigation-contracts": "^1.2.0",
+    "@k8slens/navigator-components": "^1.0.6",
+    "@k8slens/navigator-contracts": "^2.4.0",
     "@k8slens/notifications-contracts": "^1.0.4",
     "@k8slens/stylesheet-contracts": "^1.0.2",
     "@k8slens/sub-window-contracts": "^1.2.0",
