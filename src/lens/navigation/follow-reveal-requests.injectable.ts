@@ -36,7 +36,7 @@ export const followRevealRequestsInjectable = getInjectable2({
     const sendMessageToWindow = di.inject(sendMessageToWindowInjectionToken)();
     const showInfoNotification = di.inject(showInfoNotificationInjectionToken)();
 
-    // the application window holds the requests, and Aurora's own window follows them from there
+    // the application window holds the requests, and an Aurora tab moved to a window of its own follows them from there
     const revealRequests = (): RevealRequests => {
       if (isApplicationWindow(getThisWindowId())) return di.inject(revealRequestInjectable)();
       const request = computedChannelOfWindow({
@@ -84,7 +84,7 @@ export const followRevealRequestsInjectable = getInjectable2({
         { fireImmediately: true },
       );
 
-      // a request left behind would jump the next Aurora window to it
+      // a request left behind would jump the next Aurora tab to it
       return () => {
         if (handling !== undefined) handled(handling);
         stopRetrying();

@@ -2,6 +2,14 @@
 
 What changed in each version of this extension, newest first.
 
+## 0.2.0
+
+- Aurora opens only in a tab. The top bar button and the "Aurora: Open" command open the tab, or bring it to the front. To see Aurora in a window of its own, move the tab to a new window in Lens.
+- Remove the "Aurora: Open in new window" command and the Aurora window.
+- Add "Show in Aurora" to the menu of a resource in Lens. It opens Aurora and focuses the resource.
+- In the info panel, click the name of a resource to open its details in Lens.
+- Update the Lens extension API packages to the versions of the current Lens.
+
 ## 0.1.1
 
 - Fix the Aurora window and tab so that they open again after you close them. In 0.1.0, they opened only one time until you reloaded Lens.

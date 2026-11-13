@@ -2,3 +2,6 @@ dist/
 node_modules/
 *.tsbuildinfo
 .DS_Store
+.claude/skills/lens-*/
+.agents/skills/lens-*/
+.claude/settings.json
