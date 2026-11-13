@@ -9,6 +9,7 @@ What changed in each version of this extension, newest first.
 - Add "Show in Aurora" to the menu of a resource in Lens. It opens Aurora and focuses the resource.
 - In the info panel, click the name of a resource to open its details in Lens.
 - Update the Lens extension API packages to the versions of the current Lens.
+- Make the space dust visible: soft points in three layers of depth around the fleet, with a light aurora tint. The layers move past each other when you turn the camera, and the dust fills the view at all zoom levels.
 
 ## 0.1.1
 

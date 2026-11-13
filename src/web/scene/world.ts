@@ -1,6 +1,7 @@
 import * as THREE from 'three'
-import { BG, FOG_NEAR_SCALE, FOG_SPAN_SCALE, MUTED, easeFactor } from '../theme.js'
+import { BG, FOG_NEAR_SCALE, FOG_SPAN_SCALE, easeFactor } from '../theme.js'
 import { Ambient, type MotionGate } from './ambient.js'
+import { Dust } from './dust.js'
 
 export interface FrameContext {
   /** seconds since start */
@@ -21,8 +22,8 @@ export interface Space {
 }
 
 const FAR_PLANE = 400
-const DUST_COUNT = 320
-const DUST_COUNT_SMALL = 140
+/** the outer dust shell sits up to 2.8 view distances past the look point, and the camera one more */
+const FAR_PAST_VIEW = 4
 
 const isSmall = (canvas: HTMLCanvasElement): boolean => Math.min(canvas.clientWidth, canvas.clientHeight) < 620
 
@@ -43,6 +44,8 @@ export class World implements Space {
   readonly #frames: FrameFn[] = []
   readonly #resizeHandlers: (() => void)[] = []
   readonly #fog: THREE.Fog
+  readonly #dust: Dust
+  readonly #lookPoint = new THREE.Vector3()
   readonly #resizeObserver: ResizeObserver
   /** pixels on the left that an overlay covers, so the cluster centres in what is left */
   readonly #leftInset: (width: number, height: number) => number
@@ -63,7 +66,8 @@ export class World implements Space {
     this.scene.fog = this.#fog
     this.#renderer.setClearColor(background, 1)
     this.scene.add(this.rig)
-    this.scene.add(this.#makeDust())
+    this.#dust = new Dust(this.ambient, { small: isSmall(canvas), pixelRatio: this.#renderer.getPixelRatio() })
+    this.scene.add(this.#dust.object)
 
     this.camera.position.set(0, 0.8, 9)
     this.camera.lookAt(0, 0, 0)
@@ -87,7 +91,7 @@ export class World implements Space {
   /** How far the camera currently sits, so the fog can track it, and the far plane reach past the fleet. */
   setViewDistance(distance: number): void {
     this.#viewDistance = distance
-    const far = Math.max(FAR_PLANE, distance * 3)
+    const far = Math.max(FAR_PLANE, distance * FAR_PAST_VIEW)
     if (Math.abs(far - this.camera.far) < 1) return
     this.camera.far = far
     this.camera.updateProjectionMatrix()
@@ -96,6 +100,7 @@ export class World implements Space {
   dispose(): void {
     this.#resizeObserver.disconnect()
     this.#renderer.setAnimationLoop(null)
+    this.#dust.dispose()
     this.#renderer.dispose()
     this.#renderer.forceContextLoss()
   }
@@ -116,28 +121,14 @@ export class World implements Space {
     this.ambient.update(ctx)
 
     for (const fn of this.#frames) fn(ctx)
+    this.camera.getWorldDirection(this.#lookPoint).multiplyScalar(this.#viewDistance).add(this.camera.position)
+    this.#dust.update(ctx, this.#lookPoint, this.#viewDistance)
 
     // depth cue: what sits behind the look target fades into the dark
     this.#fog.near = this.#viewDistance * FOG_NEAR_SCALE
     this.#fog.far = this.#fog.near + this.#viewDistance * FOG_SPAN_SCALE
 
     this.#renderer.render(this.scene, this.camera)
-  }
-
-  #makeDust(): THREE.Points {
-    const count = isSmall(this.#canvas) ? DUST_COUNT_SMALL : DUST_COUNT
-    const geo = new THREE.BufferGeometry()
-    const pos = new Float32Array(count * 3)
-    for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 24
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 14
-      pos[i * 3 + 2] = -3 - Math.random() * 14
-    }
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-    return new THREE.Points(
-      geo,
-      new THREE.PointsMaterial({ color: MUTED, size: 0.02, transparent: true, opacity: 0.55 }),
-    )
   }
 
   #resize(): void {
