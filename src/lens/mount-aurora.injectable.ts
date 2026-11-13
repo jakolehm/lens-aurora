@@ -5,7 +5,7 @@ import { Aurora } from "../web/aurora";
 import { ClusterFeed } from "./cluster-feed";
 import { connectedClustersInjectable } from "./connected-clusters.injectable";
 import { followRevealRequestsInjectable } from "./navigation/follow-reveal-requests.injectable";
-import { showInLensInjectable } from "./navigation/show-in-lens.injectable";
+import { showDetailsInjectable } from "./navigation/show-details.injectable";
 import { themeBackground } from "./theme-background";
 
 const FLUSH_MS = 120;
@@ -17,11 +17,11 @@ export const mountAuroraInjectable = getInjectable2({
   instantiate: (di) => {
     const kubeResources = di.inject(kubeResourcesInjectionToken)();
     const connectedClusters = di.inject(connectedClustersInjectable)();
-    const showInLens = di.inject(showInLensInjectable)();
+    const showDetails = di.inject(showDetailsInjectable)();
     const followRevealRequests = di.inject(followRevealRequestsInjectable)();
 
     return () => (host: HTMLElement, onlyClusterId?: string) => {
-      const aurora = new Aurora(host, { background: themeBackground(host), showInLens });
+      const aurora = new Aurora(host, { background: themeBackground(host), showDetails });
       const feeds = new Map<string, ClusterFeed>();
 
       const connect = (id: string, name: string) => {

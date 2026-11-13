@@ -35,11 +35,11 @@ const RELATED_HEADINGS: Record<RelatedKind, string> = {
   ServiceAccount: 'service account',
 }
 
-/** A name that takes the user to the resource in Lens, or plain text when Lens cannot be pointed at it. */
+/** A name that opens the details of the resource, or plain text when Lens cannot show them. */
 const link = (ref: ResourceRef | null, text: string): string =>
   ref === null
     ? `<span>${escape(text)}</span>`
-    : `<button type="button" class="aurora-panel__link" title="Show in Lens" data-ref="${escape(JSON.stringify(ref))}">${escape(text)}</button>`
+    : `<button type="button" class="aurora-panel__link" title="Show details" data-ref="${escape(JSON.stringify(ref))}">${escape(text)}</button>`
 
 const heading = (ref: ResourceRef | null, text: string): string => `<div class="aurora-panel__name">${link(ref, text)}</div>`
 
@@ -76,7 +76,7 @@ export class InfoPanel {
   #anchorX = 0
   #anchorY = 0
 
-  constructor(host: HTMLElement, { onClose, onShowInLens }: { onClose: () => void; onShowInLens: (ref: ResourceRef) => void }) {
+  constructor(host: HTMLElement, { onClose, onShowDetails }: { onClose: () => void; onShowDetails: (ref: ResourceRef) => void }) {
     this.#host = host
 
     this.#el = document.createElement('div')
@@ -94,7 +94,7 @@ export class InfoPanel {
     this.#content = document.createElement('div')
     this.#content.addEventListener('click', (e) => {
       const ref = (e.target as Element).closest<HTMLElement>('[data-ref]')?.dataset['ref']
-      if (ref !== undefined) onShowInLens(JSON.parse(ref) as ResourceRef)
+      if (ref !== undefined) onShowDetails(JSON.parse(ref) as ResourceRef)
     })
     this.#el.append(close, this.#content)
 

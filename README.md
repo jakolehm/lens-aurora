@@ -52,7 +52,7 @@ CPU and memory need metrics-server in the cluster. Heartbeats need read access t
    - Drag to orbit. Shift-drag or right-drag to pan. Scroll to zoom.
    - Click a node or a pod to focus it and see its details.
    - Press `Esc` to release the focus, and `R` to recenter.
-   - In the info panel, click the name of a resource to open its details in Lens.
+   - In the info panel, click the name of a resource to open its details beside Aurora.
 4. In a resource list of Lens, open the menu of a resource and click **Show in Aurora** to focus it in Aurora.
 
 When you connect or disconnect a cluster, it appears in the space or goes away from it.

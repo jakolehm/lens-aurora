@@ -61,7 +61,7 @@ interface Selection {
 
 interface AuroraOptions {
   background?: number
-  showInLens: (ref: ResourceRef) => void
+  showDetails: (ref: ResourceRef) => void
 }
 
 /** The kinds Aurora can show, each in the lens it is seen in. */
@@ -104,7 +104,7 @@ export class Aurora {
   #lastRailRefresh = 0
   #framedRadius = 3
 
-  constructor(host: HTMLElement, { background = BG, showInLens }: AuroraOptions) {
+  constructor(host: HTMLElement, { background = BG, showDetails }: AuroraOptions) {
     this.#host = host
     host.style.setProperty('--bg', `#${background.toString(16).padStart(6, '0')}`)
     host.classList.add('aurora-scene')
@@ -118,7 +118,7 @@ export class Aurora {
     this.#world = new World(this.#canvas, { leftInset: railInset, background })
     this.#cameraRig = new CameraRig(this.#world.camera, this.#canvas, this.#world.ambient)
     new HoverTracker(this.#world, () => this.#clusters.values()).attach(this.#canvas)
-    this.#panel = new InfoPanel(host, { onClose: () => this.#closePanel(), onShowInLens: showInLens })
+    this.#panel = new InfoPanel(host, { onClose: () => this.#closePanel(), onShowDetails: showDetails })
     this.#rail = new Rail(host, {
       clusters: () => [...this.#clusters.values()],
       palette: this.#palette,

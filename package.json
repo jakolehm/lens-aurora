@@ -1,6 +1,6 @@
 {
   "name": "@jakolehm/lens-aurora",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A live 3D view of every Kubernetes cluster Lens is connected to.",
   "keywords": [
     "lens-extension"
@@ -47,7 +47,6 @@
     "@k8slens/kubernetes-contracts": "^2.0.4",
     "@k8slens/main-view-contracts": "^1.7.1",
     "@k8slens/messaging-contracts": "^1.0.3",
-    "@k8slens/navigation-contracts": "^1.2.0",
     "@k8slens/navigator-components": "^1.0.6",
     "@k8slens/navigator-contracts": "^2.4.0",
     "@k8slens/notifications-contracts": "^1.0.4",

@@ -448,7 +448,7 @@
   white-space: nowrap;
 }
 
-/* a name that opens the resource in Lens */
+/* a name that opens the details of the resource */
 .aurora-panel__link {
   all: unset;
   cursor: pointer;

@@ -2,6 +2,10 @@
 
 What changed in each version of this extension, newest first.
 
+## 0.3.0
+
+- In the info panel, a click on the name of a resource opens its details beside Aurora. Aurora stays in view. Before, the click moved you to the resource list in Lens.
+
 ## 0.2.0
 
 - Aurora opens only in a tab. The top bar button and the "Aurora: Open" command open the tab, or bring it to the front. To see Aurora in a window of its own, move the tab to a new window in Lens.
