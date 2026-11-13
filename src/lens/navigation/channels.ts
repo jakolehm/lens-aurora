@@ -8,6 +8,6 @@ export interface RevealRequest {
 
 export const showInLensChannel = getMessageChannel<ResourceRef>("aurora:show-in-lens");
 
-/** The application window holds the resource to reveal until the Aurora window reports it handled. */
+/** The application window holds the resource to reveal until the Aurora tab reports it handled. */
 export const revealRequestChannel = getComputedChannel<RevealRequest | undefined>("aurora:reveal-request");
 export const revealHandledChannel = getMessageChannel<number>("aurora:reveal-handled");

@@ -15,7 +15,7 @@ const Fleet = () => {
   return <div ref={mount} className="aurora-view" />;
 };
 
-/** Every connected cluster in one scene, wherever it is shown: a tab or a window of its own. */
+/** Every connected cluster in one scene, in the Aurora tab. */
 export const AuroraView = observer(() => {
   const clusters = useInject(connectedClustersInjectable)().get();
 
